@@ -3,7 +3,8 @@ const Product = require('../models/Product')
 const router = express.Router()
 const qr = require('qrcode')
 
-const frontendServerURL = 'http://localhost:3000'
+const frontendServerURL =
+  'https://counterfeit-product-recognition-system.vercel.app'
 
 //Route 1: Create a product
 router.post('/createProduct', async (req, res) => {
