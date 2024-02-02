@@ -20,37 +20,49 @@ router.post('/createProduct', async (req, res) => {
       const { brand, productID, batchNo, price, userID, dateOfManufacture } =
         req.body
 
-      //Data to encode in the QR code
-      const qrCodeData = `{productID:${productID},brand:${brand},dateOfManufacture:${dateOfManufacture}}`
+      try {
+        let product = await Product.create({
+          productID,
+          brand,
+          batchNo,
+          price,
+          dateOfManufacture,
+          userID,
+          qrCode: '',
+        })
+        try {
+          //Data to encode in the QR code
+          // const qrCodeData = `{productID:,brand:,dateOfManufacture:}`
+          const qrCodeData = `{"_id":"${product?._id}","productID":"${productID}","brand":"${brand}","dateOfManufacture":"${dateOfManufacture}"}`
 
-      // Generate the QR code as a data URL
-      qr.toDataURL(qrCodeData, async (err, data_url) => {
-        if (err) {
-          console.log(err)
+          // Generate the QR code as a data URL
+          qr.toDataURL(qrCodeData, async (err, data_url) => {
+            if (err) {
+              console.log(err)
+              res.status(500).send('Error occurred while generating QR Code')
+            } else {
+              try {
+                let qrUpdatedData = await Product.findByIdAndUpdate(
+                  product?._id,
+                  { qrCode: data_url }
+                )
+                res.status(200).json({
+                  message: 'Product created Successfully',
+                  id: qrUpdatedData?._id,
+                  qrCode: qrUpdatedData?.qrCode,
+                })
+              } catch (error) {
+                console.log(error)
+                res.status(500).send('Something went wrong while saving data')
+              }
+            }
+          })
+        } catch (error) {
           res.status(500).send('Error occurred while generating QR Code')
-        } else {
-          try {
-            // Create a new product
-            const newProduct = await Product.create({
-              productID,
-              brand,
-              batchNo,
-              price,
-              dateOfManufacture,
-              userID,
-              qrCode: data_url,
-            })
-            res.status(200).json({
-              message: 'Product created Successfully',
-              id: newProduct?._id,
-              qrCode: newProduct?.qrCode,
-            })
-          } catch (error) {
-            console.log(error)
-            res.status(500).send('Something went wrong while saving data')
-          }
         }
-      })
+      } catch (error) {
+        res.status(500).send('Error occurred while saving data')
+      }
     }
   } catch (error) {
     console.error(error.message)
