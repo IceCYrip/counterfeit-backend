@@ -9,7 +9,7 @@ const ProductSchema = new Schema({
   productID: {
     type: String,
     required: true,
-    unique: true,
+    // unique: true,
   },
   batchNo: {
     type: String,

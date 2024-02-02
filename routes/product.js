@@ -17,50 +17,39 @@ router.post('/createProduct', async (req, res) => {
       !!req.body.userID &&
       !!req.body.dateOfManufacture
     ) {
-      // Check whether the user with this email exists already
-      let product = await Product.findOne({ productID: req.body.productID })
-      if (product) {
-        return res.status(400).json({
-          error: 'Sorry a product with this product id already exists',
-        })
-      } else {
-        // Create a new product
-        product = await Product.create({
-          productID: req.body.productID,
-          brand: req.body.brand,
-          batchNo: req.body.batchNo,
-          price: req.body.price,
-          dateOfManufacture: req.body.dateOfManufacture,
-          userID: req.body.userID,
-          qrCode: '',
-        })
-      }
+      const { brand, productID, batchNo, price, userID, dateOfManufacture } =
+        req.body
 
-      // The URL you want to encode in the QR code
-      const urlToRedirect = `${frontendServerURL}/product-details?id=${product?._id}`
+      //Data to encode in the QR code
+      const qrCodeData = `{productID:${productID},brand:${brand},dateOfManufacture:${dateOfManufacture}}`
 
       // Generate the QR code as a data URL
-      qr.toDataURL(urlToRedirect, async (err, data_url) => {
+      qr.toDataURL(qrCodeData, async (err, data_url) => {
         if (err) {
-          console.error(err)
+          console.log(err)
           res.status(500).send('Error occurred while generating QR Code')
         } else {
-          // Store the QR code as a data URL in the qrCodeURL variable
-
-          const updatedData = {
-            qrCode: data_url,
+          try {
+            // Create a new product
+            const newProduct = await Product.create({
+              productID,
+              brand,
+              batchNo,
+              price,
+              dateOfManufacture,
+              userID,
+              qrCode: data_url,
+            })
+            res.status(200).json({
+              message: 'Product created Successfully',
+              id: newProduct?._id,
+              qrCode: newProduct?.qrCode,
+            })
+          } catch (error) {
+            console.log(error)
+            res.status(500).send('Something went wrong while saving data')
           }
-
-          product = await Product.findByIdAndUpdate(product?._id, updatedData, {
-            new: true,
-          })
         }
-        const data = {
-          message: 'Product created Successfully',
-          id: product?._id,
-          qrCode: product?.qrCode,
-        }
-        res.status(200).json(data)
       })
     }
   } catch (error) {
